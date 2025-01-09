@@ -1,6 +1,10 @@
 import express from 'express';
 import mongoose from 'mongoose';
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
+import { auth, JWT_SECRET } from './middleware/auth.js';
 import Todo from './models/Todo.js';
+import User from './models/User.js';
 
 const app = express();
 app.use(express.json());
@@ -8,11 +12,49 @@ app.use(express.static('public'));
 
 // Connect to MongoDB
 mongoose.connect('mongodb://localhost:27017/todoapp')
-  .then(() => console.log('Connected to MongoDB'))
+  .then(async () => {
+    console.log('Connected to MongoDB');
+    // Create default admin user if it doesn't exist
+    try {
+      const adminExists = await User.findOne({ username: 'admin' });
+      if (!adminExists) {
+        const admin = new User({
+          username: 'admin',
+          password: 'Ss121270!'
+        });
+        await admin.save();
+        console.log('Default admin user created');
+      }
+    } catch (error) {
+      console.error('Error creating admin user:', error);
+    }
+  })
   .catch(err => console.error('MongoDB connection error:', err));
 
-// Get all todos
-app.get('/api/todos', async (req, res) => {
+// Authentication Routes
+app.post('/api/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const user = await User.findOne({ username });
+    
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    const token = jwt.sign({ userId: user._id }, JWT_SECRET);
+    res.json({ token });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Protected Todo Routes
+app.get('/api/todos', auth, async (req, res) => {
   try {
     const todos = await Todo.find().sort({ createdAt: -1 });
     res.json(todos);
@@ -21,8 +63,7 @@ app.get('/api/todos', async (req, res) => {
   }
 });
 
-// Create new todo
-app.post('/api/todos', async (req, res) => {
+app.post('/api/todos', auth, async (req, res) => {
   try {
     const todo = new Todo({ text: req.body.text });
     await todo.save();
@@ -32,8 +73,7 @@ app.post('/api/todos', async (req, res) => {
   }
 });
 
-// Toggle todo completion
-app.put('/api/todos/:id', async (req, res) => {
+app.put('/api/todos/:id', auth, async (req, res) => {
   try {
     const todo = await Todo.findById(req.params.id);
     if (!todo) return res.status(404).json({ error: 'Todo not found' });
@@ -46,8 +86,7 @@ app.put('/api/todos/:id', async (req, res) => {
   }
 });
 
-// Delete todo
-app.delete('/api/todos/:id', async (req, res) => {
+app.delete('/api/todos/:id', auth, async (req, res) => {
   try {
     const todo = await Todo.findByIdAndDelete(req.params.id);
     if (!todo) return res.status(404).json({ error: 'Todo not found' });
