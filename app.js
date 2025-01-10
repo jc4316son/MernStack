@@ -1,14 +1,14 @@
 import express from "express";
+import flightRoutes from "./routes/flightRoutes.js";
 
 const app = express()
 
 // Middleware
 app.use(express.json())
+app.use(express.static('public'))
 
 // Routes
-app.get("/", (req, res) => {
-    res.json({ message: "Welcome to MERN Stack" })
-})
+app.use("/api/flights", flightRoutes)
 
 // Error handling
 app.use((err, req, res, next) => {

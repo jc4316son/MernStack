@@ -1,0 +1,63 @@
+import mongoose from 'mongoose';
+
+const LegSchema = new mongoose.Schema({
+    origin: {
+        type: String,
+        required: true,
+        uppercase: true
+    },
+    destination: {
+        type: String,
+        required: true,
+        uppercase: true
+    },
+    departureTime: {
+        type: Date,
+        required: true
+    },
+    arrivalTime: {
+        type: Date,
+        required: true
+    }
+});
+
+const FlightSchema = new mongoose.Schema({
+    tailNumber: {
+        type: String,
+        required: true,
+        uppercase: true
+    },
+    startDate: {
+        type: Date,
+        required: true
+    },
+    endDate: {
+        type: Date,
+        required: true
+    },
+    originAirport: {
+        type: String,
+        required: true,
+        uppercase: true
+    },
+    destinationAirport: {
+        type: String,
+        required: true,
+        uppercase: true
+    },
+    legs: [LegSchema],
+    createdAt: {
+        type: Date,
+        default: Date.now
+    }
+});
+
+// Validate that endDate is after startDate
+FlightSchema.pre('save', function(next) {
+    if (this.endDate <= this.startDate) {
+        next(new Error('End date must be after start date'));
+    }
+    next();
+});
+
+export default mongoose.model('Flight', FlightSchema);
