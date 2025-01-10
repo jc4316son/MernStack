@@ -3,7 +3,7 @@ import app from "./app.js"
 
 ( async () => {
     try{
-        await mongoose.connect("mongodb://localhost:27017/mernstack")
+        await mongoose.connect("mongodb://127.0.0.1:27017/flightapp")
         console.log("DB CONNECTED");
 
         app.listen(5000, () => {
