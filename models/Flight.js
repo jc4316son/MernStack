@@ -1,5 +1,28 @@
 import mongoose from 'mongoose';
 
+const NoteSchema = new mongoose.Schema({
+    content: {
+        type: String,
+        required: true
+    },
+    createdBy: {
+        type: String,
+        required: true
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now
+    },
+    editHistory: [{
+        content: String,
+        editedBy: String,
+        editedAt: {
+            type: Date,
+            default: Date.now
+        }
+    }]
+});
+
 const LegSchema = new mongoose.Schema({
     origin: {
         type: String,
@@ -49,6 +72,19 @@ const FlightSchema = new mongoose.Schema({
     createdAt: {
         type: Date,
         default: Date.now
+    },
+    notes: [NoteSchema],
+    color: {
+        type: String,
+        default: function() {
+            // Generate a consistent color based on tailNumber
+            let hash = 0;
+            for (let i = 0; i < this.tailNumber.length; i++) {
+                hash = this.tailNumber.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            const c = (hash & 0x00FFFFFF).toString(16).toUpperCase();
+            return "#" + "00000".substring(0, 6 - c.length) + c;
+        }
     }
 });
 

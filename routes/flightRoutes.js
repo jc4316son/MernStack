@@ -3,6 +3,72 @@ import Flight from '../models/Flight.js';
 
 const router = express.Router();
 
+// Add a note to a flight
+router.post('/:id/notes', async (req, res) => {
+    try {
+        const flight = await Flight.findById(req.params.id);
+        if (!flight) {
+            return res.status(404).json({ error: 'Flight not found' });
+        }
+
+        flight.notes.push({
+            content: req.body.content,
+            createdBy: req.body.username
+        });
+
+        await flight.save();
+        res.status(201).json(flight);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+});
+
+// Edit a note
+router.put('/:flightId/notes/:noteId', async (req, res) => {
+    try {
+        const flight = await Flight.findById(req.params.flightId);
+        if (!flight) {
+            return res.status(404).json({ error: 'Flight not found' });
+        }
+
+        const note = flight.notes.id(req.params.noteId);
+        if (!note) {
+            return res.status(404).json({ error: 'Note not found' });
+        }
+
+        // Store the current content in edit history
+        note.editHistory.push({
+            content: note.content,
+            editedBy: req.body.username,
+            editedAt: new Date()
+        });
+
+        // Update the note content
+        note.content = req.body.content;
+        
+        await flight.save();
+        res.json(flight);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+});
+
+// Delete a note
+router.delete('/:flightId/notes/:noteId', async (req, res) => {
+    try {
+        const flight = await Flight.findById(req.params.flightId);
+        if (!flight) {
+            return res.status(404).json({ error: 'Flight not found' });
+        }
+
+        flight.notes.pull(req.params.noteId);
+        await flight.save();
+        res.json(flight);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+});
+
 // Create a new flight
 router.post('/', async (req, res) => {
     try {

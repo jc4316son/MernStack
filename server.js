@@ -5,13 +5,17 @@ import bcrypt from 'bcryptjs';
 import { auth, JWT_SECRET } from './middleware/auth.js';
 import Todo from './models/Todo.js';
 import User from './models/User.js';
+import flightRoutes from './routes/flightRoutes.js';
 
 const app = express();
 app.use(express.json());
 app.use(express.static('public'));
 
+// Flight Routes
+app.use('/api/flights', flightRoutes);
+
 // Connect to MongoDB
-mongoose.connect('mongodb://localhost:27017/todoapp')
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/flightapp')
   .then(async () => {
     console.log('Connected to MongoDB');
     // Create default admin user if it doesn't exist
